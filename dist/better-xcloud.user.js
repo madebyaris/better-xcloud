@@ -1842,7 +1842,7 @@ class ScreenshotManager {
   if (!$player || !$player.isConnected) return;
   $player.parentElement.addEventListener("animationend", this.onAnimationEnd, { once: !0 }), $player.parentElement.classList.add("bx-taking-screenshot");
   let canvasContext = this.canvasContext;
-  if ($player instanceof HTMLCanvasElement) streamPlayer.getWebGL2Player().drawFrame(!0);
+  if ($player instanceof HTMLCanvasElement) streamPlayer.getWebGL2Player().forceDrawFrame();
   if (canvasContext.drawImage($player, 0, 0, $canvas.width, $canvas.height), AppInterface) {
    let data = $canvas.toDataURL("image/png").split(";base64,")[1];
    AppInterface.saveScreenshot(currentStream.titleSlug, data), canvasContext.clearRect(0, 0, $canvas.width, $canvas.height), callback && callback();
@@ -7043,28 +7043,32 @@ class WebGL2Player {
   let gl = this.gl, program = this.program;
   gl.uniform2f(gl.getUniformLocation(program, "iResolution"), this.$canvas.width, this.$canvas.height), gl.uniform1i(gl.getUniformLocation(program, "filterId"), this.options.filterId), gl.uniform1f(gl.getUniformLocation(program, "sharpenFactor"), this.options.sharpenFactor), gl.uniform1f(gl.getUniformLocation(program, "brightness"), this.options.brightness), gl.uniform1f(gl.getUniformLocation(program, "contrast"), this.options.contrast), gl.uniform1f(gl.getUniformLocation(program, "saturation"), this.options.saturation);
  }
- drawFrame(force = !1) {
-  if (!force) {
-   if (this.targetFps === 0) return;
-   if (this.targetFps < 60) {
-    let currentTime = performance.now();
-    if (currentTime - this.lastFrameTime < this.frameInterval) return;
-    this.lastFrameTime = currentTime;
-   }
-  }
+ forceDrawFrame() {
   let gl = this.gl;
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.$video), gl.drawArrays(gl.TRIANGLES, 0, 6);
  }
  setupRendering() {
-  let animate;
+  let frameCallback;
   if ("requestVideoFrameCallback" in HTMLVideoElement.prototype) {
    let $video = this.$video;
-   animate = () => {
-    if (!this.stopped) this.drawFrame(), this.animFrameId = $video.requestVideoFrameCallback(animate);
-   }, this.animFrameId = $video.requestVideoFrameCallback(animate);
-  } else animate = () => {
-    if (!this.stopped) this.drawFrame(), this.animFrameId = requestAnimationFrame(animate);
-   }, this.animFrameId = requestAnimationFrame(animate);
+   frameCallback = $video.requestVideoFrameCallback.bind($video);
+  } else frameCallback = requestAnimationFrame;
+  let animate = () => {
+   if (this.stopped) return;
+   let draw = !0;
+   if (this.targetFps === 0) draw = !1;
+   else if (this.targetFps < 60) {
+    let currentTime = performance.now();
+    if (currentTime - this.lastFrameTime < this.frameInterval) draw = !1;
+    else this.lastFrameTime = currentTime;
+   }
+   if (draw) {
+    let gl = this.gl;
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.$video), gl.drawArrays(gl.TRIANGLES, 0, 6);
+   }
+   this.animFrameId = frameCallback(animate);
+  };
+  this.animFrameId = frameCallback(animate);
  }
  setupShaders() {
   BxLogger.info(this.LOG_TAG, "Setting up", getPref("video_power_preference"));

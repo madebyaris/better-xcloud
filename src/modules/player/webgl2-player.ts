@@ -94,52 +94,52 @@ export class WebGL2Player {
         gl.uniform1f(gl.getUniformLocation(program, 'saturation'), this.options.saturation);
     }
 
-    drawFrame(force=false) {
-        if (!force) {
-            // Don't draw when FPS is 0
-            if (this.targetFps === 0) {
-                return;
-            }
-
-            // Limit FPS
-            if (this.targetFps < 60) {
-                const currentTime = performance.now();
-                const timeSinceLastFrame = currentTime - this.lastFrameTime;
-                if (timeSinceLastFrame < this.frameInterval) {
-                    return;
-                }
-                this.lastFrameTime = currentTime;
-            }
-        }
-
+    forceDrawFrame() {
         const gl = this.gl!;
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.$video);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
     private setupRendering() {
-        let animate: any;
-
+        let frameCallback: any;
         if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
             const $video = this.$video;
-            animate = () => {
-                if (!this.stopped) {
-                    this.drawFrame();
-                    this.animFrameId = $video.requestVideoFrameCallback(animate);
-                }
-            }
-
-            this.animFrameId = $video.requestVideoFrameCallback(animate);
+            frameCallback = $video.requestVideoFrameCallback.bind($video);
         } else {
-            animate = () => {
-                if (!this.stopped) {
-                    this.drawFrame();
-                    this.animFrameId = requestAnimationFrame(animate);
+            frameCallback = requestAnimationFrame;
+        }
+
+        let animate = () => {
+            if (this.stopped) {
+                return;
+            }
+
+            let draw = true;
+
+            // Don't draw when FPS is 0
+            if (this.targetFps === 0) {
+                draw = false;
+            } else if (this.targetFps < 60) {
+                // Limit FPS
+                const currentTime = performance.now();
+                const timeSinceLastFrame = currentTime - this.lastFrameTime;
+                if (timeSinceLastFrame < this.frameInterval) {
+                    draw = false;
+                } else {
+                    this.lastFrameTime = currentTime;
                 }
             }
 
-            this.animFrameId = requestAnimationFrame(animate);
+            if (draw) {
+                const gl = this.gl!;
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.$video);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+            }
+
+            this.animFrameId = frameCallback(animate);
         }
+
+        this.animFrameId = frameCallback(animate);
     }
 
     private setupShaders() {

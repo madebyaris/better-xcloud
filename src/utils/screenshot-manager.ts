@@ -65,7 +65,7 @@ export class ScreenshotManager {
         const canvasContext = this.canvasContext;
 
         if ($player instanceof HTMLCanvasElement) {
-            streamPlayer.getWebGL2Player().drawFrame(true);
+            streamPlayer.getWebGL2Player().forceDrawFrame();
         }
         canvasContext.drawImage($player, 0, 0, $canvas.width, $canvas.height);
 
