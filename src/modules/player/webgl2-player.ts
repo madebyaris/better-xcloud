@@ -96,7 +96,7 @@ export class WebGL2Player {
 
     forceDrawFrame() {
         const gl = this.gl!;
-        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGB, gl.UNSIGNED_BYTE, this.$video);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.$video);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
@@ -132,7 +132,7 @@ export class WebGL2Player {
 
             if (draw) {
                 const gl = this.gl!;
-                gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGB, gl.UNSIGNED_BYTE, this.$video);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.$video);
                 gl.drawArrays(gl.TRIANGLES, 0, 6);
             }
 
@@ -207,9 +207,6 @@ export class WebGL2Player {
 
         gl.activeTexture(gl.TEXTURE0);
         // gl.bindTexture(gl.TEXTURE_2D, texture);
-
-        // Initialize texture once
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.$video);
     }
 
     resume() {
