@@ -25,9 +25,9 @@ export interface BxSelectSettingElement extends HTMLSelectElement, BxBaseSetting
 export class SettingElement {
     static #renderOptions(key: string, setting: PreferenceSetting, currentValue: any, onChange: any): BxSelectSettingElement {
         const $control = CE<BxSelectSettingElement>('select', {
-                // title: setting.label,
-                tabindex: 0,
-            });
+            // title: setting.label,
+            tabindex: 0,
+        });
 
         let $parent: HTMLElement;
         if (setting.optionsGroup) {
@@ -64,10 +64,10 @@ export class SettingElement {
 
     static #renderMultipleOptions(key: string, setting: PreferenceSetting, currentValue: any, onChange: any, params: MultipleOptionsParams={}): BxSelectSettingElement {
         const $control = CE<BxSelectSettingElement>('select', {
-                // title: setting.label,
-                multiple: true,
-                tabindex: 0,
-            });
+            // title: setting.label,
+            multiple: true,
+            tabindex: 0,
+        });
 
         if (params && params.size) {
             $control.setAttribute('size', params.size.toString());
@@ -164,6 +164,15 @@ export class SettingElement {
         const MAX = options.reverse ? -setting.min! : setting.max!;
         const STEPS = Math.max(setting.steps || 1, 1);
 
+        let intervalId: number | null;
+        let isHolding = false;
+
+        const clearIntervalId = () => {
+            console.log('clearIntervalId');
+            intervalId && clearInterval(intervalId);
+            intervalId = null;
+        }
+
         const renderTextValue = (value: any) => {
             value = parseInt(value as string);
 
@@ -182,6 +191,10 @@ export class SettingElement {
         const updateButtonsVisibility = () => {
             $btnDec.classList.toggle('bx-inactive', controlValue === MIN);
             $btnInc.classList.toggle('bx-inactive', controlValue === MAX);
+
+            if (controlValue === MIN || controlValue === MAX) {
+                clearIntervalId();
+            }
         }
 
         const $wrapper = CE<BxHtmlSettingElement>('div', {'class': 'bx-number-stepper', id: `bx_setting_${key}`},
@@ -212,7 +225,7 @@ export class SettingElement {
         }
 
         $range = CE<HTMLInputElement>('input', {
-            id: `bx_setting_${key}`,
+            id: `bx_inp_setting_${key}`,
             type: 'range',
             min: MIN,
             max: MAX,
@@ -273,18 +286,8 @@ export class SettingElement {
 
         updateButtonsVisibility();
 
-        let interval: number;
-        let isHolding = false;
-
-        const onClick = (e: Event) => {
-            if (isHolding) {
-                e.preventDefault();
-                isHolding = false;
-
-                return;
-            }
-
-            const $btn = e.target as HTMLElement;
+        const buttonPressed = (e: Event, $btn: HTMLElement) => {
+            console.log('changeValue');
             let value = parseInt(controlValue);
 
             const btnType = $btn.dataset.type;
@@ -300,27 +303,45 @@ export class SettingElement {
             $text.textContent = renderTextValue(value);
             $range && ($range.value = value.toString());
 
-            isHolding = false;
-            !(e as any).ignoreOnChange && onChange && onChange(e, value);
-        }
-
-        const onMouseDown = (e: PointerEvent) => {
-            e.preventDefault();
-            isHolding = true;
-
-            const args = arguments;
-            interval && clearInterval(interval);
-            interval = window.setInterval(() => {
-                e.target && BxEvent.dispatch(e.target as HTMLElement, 'click', {
-                    arguments: args,
-                });
-            }, 200);
+            onChange && onChange(e, value);
         };
 
-        const onMouseUp = (e: PointerEvent) => {
+        const onClick = (e: Event) => {
+            e.preventDefault();
+            if (isHolding) {
+                return;
+            }
+
+            console.log('click');
+            const $btn = (e.target as HTMLElement).closest('button') as HTMLElement;
+            $btn && buttonPressed(e, $btn);
+
+            clearIntervalId();
+            isHolding = false;
+        };
+
+        const onPointerDown = (e: PointerEvent) => {
+            console.log('down');
+            clearIntervalId();
+
+            const $btn = (e.target as HTMLElement).closest('button') as HTMLElement;
+            if (!$btn) {
+                return;
+            }
+
+            isHolding = true;
             e.preventDefault();
 
-            interval && clearInterval(interval);
+            intervalId = window.setInterval((e: Event) => {
+                buttonPressed(e, $btn);
+            }, 200);
+
+            window.addEventListener('pointerup', onPointerUp, {once: true});
+            window.addEventListener('pointercancel', onPointerUp, {once: true});
+        };
+
+        const onPointerUp = (e: PointerEvent) => {
+            clearIntervalId();
             isHolding = false;
         };
 
@@ -332,16 +353,9 @@ export class SettingElement {
             $range.value = options.reverse ? -value : value;
         };
 
-        $btnDec.addEventListener('click', onClick);
-        $btnDec.addEventListener('pointerdown', onMouseDown);
-        $btnDec.addEventListener('pointerup', onMouseUp);
-        $btnDec.addEventListener('contextmenu', onContextMenu);
-
-        $btnInc.addEventListener('click', onClick);
-        $btnInc.addEventListener('pointerdown', onMouseDown);
-        $btnInc.addEventListener('pointerup', onMouseUp);
-        $btnInc.addEventListener('contextmenu', onContextMenu);
-
+        $wrapper.addEventListener('click', onClick);
+        $wrapper.addEventListener('pointerdown', onPointerDown);
+        $wrapper.addEventListener('contextmenu', onContextMenu);
         setNearby($wrapper, {
             focus: $range || $btnInc,
         })
