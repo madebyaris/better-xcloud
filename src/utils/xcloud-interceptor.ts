@@ -14,22 +14,31 @@ import { PrefKey } from "@/enums/pref-keys";
 import { getPref, StreamResolution, StreamTouchController } from "./settings-storages/global-settings-storage";
 
 export class XcloudInterceptor {
-    private static readonly SERVER_EMOJIS = {
-        AustraliaEast: '🇦🇺',
-        AustraliaSouthEast: '🇦🇺',
-        BrazilSouth: '🇧🇷',
-        EastUS: '🇺🇸',
-        EastUS2: '🇺🇸',
-        JapanEast: '🇯🇵',
-        KoreaCentral: '🇰🇷',
-        MexicoCentral: '🇲🇽',
-        NorthCentralUs: '🇺🇸',
-        SouthCentralUS: '🇺🇸',
-        SwedenCentral: '🇸🇪',
-        UKSouth: '🇬🇧',
-        WestEurope: '🇪🇺',
-        WestUS: '🇺🇸',
-        WestUS2: '🇺🇸',
+    private static readonly SERVER_EXTRA_INFO: Record<string, [string, ServerContinent]> = {
+        // North America
+        EastUS: ['🇺🇸', 'america-north'],
+        EastUS2: ['🇺🇸', 'america-north'],
+        NorthCentralUs: ['🇺🇸', 'america-north'],
+        SouthCentralUS: ['🇺🇸', 'america-north'],
+        WestUS: ['🇺🇸', 'america-north'],
+        WestUS2: ['🇺🇸', 'america-north'],
+        MexicoCentral: ['🇲🇽', 'america-north'],
+
+        // South America
+        BrazilSouth: ['🇧🇷', 'america-south'],
+
+        // Asia
+        JapanEast: ['🇯🇵', 'asia'],
+        KoreaCentral: ['🇰🇷', 'asia'],
+
+        // Australia
+        AustraliaEast: ['🇦🇺', 'australia'],
+        AustraliaSouthEast: ['🇦🇺', 'australia'],
+
+        // Europe
+        SwedenCentral: ['🇸🇪', 'europe'],
+        UKSouth: ['🇬🇧', 'europe'],
+        WestEurope: ['🇪🇺', 'europe'],
     };
 
     private static async handleLogin(request: RequestInfo | URL, init?: RequestInit) {
@@ -53,10 +62,11 @@ export class XcloudInterceptor {
 
         // Get server list
         const serverRegex = /\/\/(\w+)\./;
-        const serverEmojis = XcloudInterceptor.SERVER_EMOJIS;
+        const serverExtra = XcloudInterceptor.SERVER_EXTRA_INFO;
 
-        for (let region of obj.offeringSettings.regions) {
-            const regionName = region.name as keyof typeof serverEmojis;
+        let region: ServerRegion;
+        for (region of obj.offeringSettings.regions) {
+            const regionName = region.name as keyof typeof serverExtra;
             let shortName = region.name;
 
             if (region.isDefault) {
@@ -66,8 +76,11 @@ export class XcloudInterceptor {
             let match = serverRegex.exec(region.baseUri);
             if (match) {
                 shortName = match[1];
-                if (serverEmojis[regionName]) {
-                    shortName = serverEmojis[regionName] + ' ' + shortName;
+                if (serverExtra[regionName]) {
+                    shortName = serverExtra[regionName][0] + ' ' + shortName;
+                    region.contintent = serverExtra[regionName][1];
+                } else {
+                    region.contintent = 'other';
                 }
             }
 

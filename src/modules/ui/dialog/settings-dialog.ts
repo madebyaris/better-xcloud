@@ -1044,21 +1044,43 @@ export class SettingsNavigationDialog extends NavigationDialog {
     }
 
     private renderServerSetting(setting: SettingTabContentItem): HTMLElement {
-        let selectedValue;
+        let selectedValue =getPref(PrefKey.SERVER_REGION);
+
+        const continents: Record<ServerContinent, {
+            label: string,
+            children?: HTMLOptionElement[],
+        }> = {
+            'america-north': {
+                label: t('continent-north-america'),
+            },
+            'america-south': {
+                label: t('continent-south-america'),
+            },
+            'asia': {
+                label: t('continent-asia'),
+            },
+            'australia': {
+                label: t('continent-australia'),
+            },
+            'europe': {
+                label: t('continent-europe'),
+            },
+            'other': {
+                label: t('other'),
+            },
+        };
 
         const $control = CE<HTMLSelectElement>('select', {
-                id: `bx_setting_${setting.pref}`,
-                title: setting.label,
-                tabindex: 0,
-            });
+            id: `bx_setting_${setting.pref}`,
+            title: setting.label,
+            tabindex: 0,
+        });
         $control.name = $control.id;
 
         $control.addEventListener('input', (e: Event) => {
             setPref(setting.pref!, (e.target as HTMLSelectElement).value);
             this.onGlobalSettingChanged(e);
         });
-
-        selectedValue = getPref(PrefKey.SERVER_REGION);
 
         setting.options = {};
         for (const regionName in STATES.serverRegions) {
@@ -1076,15 +1098,29 @@ export class SettingsNavigationDialog extends NavigationDialog {
             }
 
             setting.options[value] = label;
+
+            const $option = CE<HTMLOptionElement>('option', {value: value}, label);
+            const continent = continents[region.contintent];
+            if (!continent.children) {
+                continent.children = [];
+            }
+            continent.children.push($option);
         }
 
-        for (const value in setting.options) {
-            const label = setting.options[value];
+        const fragment = document.createDocumentFragment();
+        let key: keyof typeof continents;
+        for (key in continents) {
+            const continent = continents[key];
+            if (!continent.children) {
+                continue;
+            }
 
-            const $option = CE('option', {value: value}, label);
-            $control.appendChild($option);
+            fragment.appendChild(CE('optgroup', {
+                label: continent.label,
+            }, ...continent.children));
         }
 
+        $control.appendChild(fragment);
         $control.disabled = Object.keys(STATES.serverRegions).length === 0;
 
         // Select preferred region

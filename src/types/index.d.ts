@@ -21,14 +21,24 @@ interface Window {
 
 interface NavigatorBattery extends Navigator {
     getBattery: () => Promise<{
-        charging: boolean,
-        level: float,
+        charging: boolean;
+        level: float;
     }>,
 }
 
+type ServerContinent = 'america-north' | 'america-south' | 'asia' | 'australia' | 'europe' | 'other';
+type ServerRegion = {
+    baseUri: string;
+    isDefault: boolean;
+    name: string;
+    shortName: string;
+
+    contintent: ServerContinent;
+};
+
 type BxStates = {
     supportedRegion: boolean;
-    serverRegions: any;
+    serverRegions: Record<string, ServerRegion>;
     selectedRegion: any;
     gsToken: string;
     isSignedIn: boolean;
