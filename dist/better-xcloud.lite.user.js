@@ -300,6 +300,11 @@ var SUPPORTED_LANGUAGES = {
  "confirm-reload-stream": "Do you want to refresh the stream?",
  connected: "Connected",
  "console-connect": "Connect",
+ "continent-asia": "Asia",
+ "continent-australia": "Australia",
+ "continent-europe": "Europe",
+ "continent-north-america": "North America",
+ "continent-south-america": "South America",
  contrast: "Contrast",
  controller: "Controller",
  "controller-friendly-ui": "Controller-friendly UI",
@@ -752,14 +757,16 @@ class SettingElement {
  }
  static #renderNumberStepper(key, setting, value, onChange, options = {}) {
   options = options || {}, options.suffix = options.suffix || "", options.disabled = !!options.disabled, options.hideSlider = !!options.hideSlider;
-  let $text, $btnDec, $btnInc, $range = null, controlValue = value, MIN = options.reverse ? -setting.max : setting.min, MAX = options.reverse ? -setting.min : setting.max, STEPS = Math.max(setting.steps || 1, 1), renderTextValue = (value2) => {
+  let $text, $btnDec, $btnInc, $range = null, controlValue = value, MIN = options.reverse ? -setting.max : setting.min, MAX = options.reverse ? -setting.min : setting.max, STEPS = Math.max(setting.steps || 1, 1), intervalId, isHolding = !1, clearIntervalId = () => {
+   intervalId && clearInterval(intervalId), intervalId = null;
+  }, renderTextValue = (value2) => {
    value2 = parseInt(value2);
    let textContent = null;
    if (options.customTextValue) textContent = options.customTextValue(value2);
    if (textContent === null) textContent = value2.toString() + options.suffix;
    return textContent;
   }, updateButtonsVisibility = () => {
-   $btnDec.classList.toggle("bx-inactive", controlValue === MIN), $btnInc.classList.toggle("bx-inactive", controlValue === MAX);
+   if ($btnDec.classList.toggle("bx-inactive", controlValue === MIN), $btnInc.classList.toggle("bx-inactive", controlValue === MAX), controlValue === MIN || controlValue === MAX) clearIntervalId();
   }, $wrapper = CE("div", { class: "bx-number-stepper", id: `bx_setting_${key}` }, $btnDec = CE("button", {
    "data-type": "dec",
    type: "button",
@@ -773,7 +780,7 @@ class SettingElement {
   }, "+"));
   if (options.disabled) return $btnInc.disabled = !0, $btnInc.classList.add("bx-inactive"), $btnDec.disabled = !0, $btnDec.classList.add("bx-inactive"), $wrapper.disabled = !0, $wrapper;
   if ($range = CE("input", {
-   id: `bx_setting_${key}`,
+   id: `bx_inp_setting_${key}`,
    type: "range",
    min: MIN,
    max: MAX,
@@ -800,30 +807,29 @@ class SettingElement {
    $wrapper.appendChild($markers);
   }
   updateButtonsVisibility();
-  let interval, isHolding = !1, onClick = (e) => {
-   if (isHolding) {
-    e.preventDefault(), isHolding = !1;
-    return;
-   }
-   let $btn = e.target, value2 = parseInt(controlValue);
+  let buttonPressed = (e, $btn) => {
+   let value2 = parseInt(controlValue);
    if ($btn.dataset.type === "dec") value2 = Math.max(MIN, value2 - STEPS);
    else value2 = Math.min(MAX, value2 + STEPS);
-   controlValue = value2, updateButtonsVisibility(), $text.textContent = renderTextValue(value2), $range && ($range.value = value2.toString()), isHolding = !1, !e.ignoreOnChange && onChange && onChange(e, value2);
-  }, onMouseDown = (e) => {
-   e.preventDefault(), isHolding = !0;
-   let args = arguments;
-   interval && clearInterval(interval), interval = window.setInterval(() => {
-    e.target && BxEvent.dispatch(e.target, "click", {
-     arguments: args
-    });
-   }, 200);
-  }, onMouseUp = (e) => {
-   e.preventDefault(), interval && clearInterval(interval), isHolding = !1;
+   controlValue = value2, updateButtonsVisibility(), $text.textContent = renderTextValue(value2), $range && ($range.value = value2.toString()), onChange && onChange(e, value2);
+  }, onClick = (e) => {
+   if (e.preventDefault(), isHolding) return;
+   let $btn = e.target.closest("button");
+   $btn && buttonPressed(e, $btn), clearIntervalId(), isHolding = !1;
+  }, onPointerDown = (e) => {
+   clearIntervalId();
+   let $btn = e.target.closest("button");
+   if (!$btn) return;
+   isHolding = !0, e.preventDefault(), intervalId = window.setInterval((e2) => {
+    buttonPressed(e2, $btn);
+   }, 200), window.addEventListener("pointerup", onPointerUp, { once: !0 }), window.addEventListener("pointercancel", onPointerUp, { once: !0 });
+  }, onPointerUp = (e) => {
+   clearIntervalId(), isHolding = !1;
   }, onContextMenu = (e) => e.preventDefault();
   return $wrapper.setValue = (value2) => {
    $text.textContent = renderTextValue(value2), $range.value = options.reverse ? -value2 : value2;
-  }, $btnDec.addEventListener("click", onClick), $btnDec.addEventListener("pointerdown", onMouseDown), $btnDec.addEventListener("pointerup", onMouseUp), $btnDec.addEventListener("contextmenu", onContextMenu), $btnInc.addEventListener("click", onClick), $btnInc.addEventListener("pointerdown", onMouseDown), $btnInc.addEventListener("pointerup", onMouseUp), $btnInc.addEventListener("contextmenu", onContextMenu), setNearby($wrapper, {
-   focus: $range || $btnInc
+  }, $wrapper.addEventListener("click", onClick), $wrapper.addEventListener("pointerdown", onPointerDown), $wrapper.addEventListener("contextmenu", onContextMenu), setNearby($wrapper, {
+   focus: options.hideSlider ? $btnInc : $range
   }), $wrapper;
  }
  static #METHOD_MAP = {
@@ -2886,6 +2892,7 @@ class NavigationDialogManager {
    if (!width) return;
    if ($select.multiple) $label = $parent.querySelector(".bx-select-value"), width += 20;
    else $label = $parent.querySelector("div");
+   if ($select.querySelector("optgroup")) width -= 15;
    $label.style.minWidth = width + "px", $parent.dataset.calculated = "true";
   }
  }
@@ -2901,7 +2908,7 @@ class NavigationDialogManager {
     else if (keyCode === "ArrowLeft" || keyCode === "ArrowRight") {
      if (!($target instanceof HTMLInputElement && ($target.type === "text" || $target.type === "range"))) handled = !0, this.focusDirection(keyCode === "ArrowLeft" ? 4 : 2);
     } else if (keyCode === "Enter" || keyCode === "NumpadEnter" || keyCode === "Space") {
-     if (!($target instanceof HTMLInputElement && $target.type === "text")) handled = !0, $target.dispatchEvent(new MouseEvent("click"));
+     if (!($target instanceof HTMLInputElement && $target.type === "text")) handled = !0, $target.dispatchEvent(new MouseEvent("click", { bubbles: !0 }));
     } else if (keyCode === "Escape") handled = !0, this.hide();
     if (handled) event.preventDefault(), event.stopPropagation();
     break;
@@ -2955,7 +2962,7 @@ class NavigationDialogManager {
    }
    if (this.gamepadLastStates[gamepad.index] = null, lastKeyPressed) return;
    if (releasedButton === 0) {
-    document.activeElement && document.activeElement.dispatchEvent(new MouseEvent("click"));
+    document.activeElement && document.activeElement.dispatchEvent(new MouseEvent("click", { bubbles: !0 }));
     return;
    } else if (releasedButton === 1) {
     this.hide();
@@ -4099,26 +4106,52 @@ class SettingsNavigationDialog extends NavigationDialog {
   this.$btnReload.classList.add("bx-danger"), this.$noteGlobalReload.classList.add("bx-gone"), this.$btnGlobalReload.classList.remove("bx-gone"), this.$btnGlobalReload.classList.add("bx-danger");
  }
  renderServerSetting(setting) {
-  let selectedValue, $control = CE("select", {
+  let selectedValue = getPref("server_region"), continents = {
+   "america-north": {
+    label: t("continent-north-america")
+   },
+   "america-south": {
+    label: t("continent-south-america")
+   },
+   asia: {
+    label: t("continent-asia")
+   },
+   australia: {
+    label: t("continent-australia")
+   },
+   europe: {
+    label: t("continent-europe")
+   },
+   other: {
+    label: t("other")
+   }
+  }, $control = CE("select", {
    id: `bx_setting_${setting.pref}`,
    title: setting.label,
    tabindex: 0
   });
   $control.name = $control.id, $control.addEventListener("input", (e) => {
    setPref(setting.pref, e.target.value), this.onGlobalSettingChanged(e);
-  }), selectedValue = getPref("server_region"), setting.options = {};
+  }), setting.options = {};
   for (let regionName in STATES.serverRegions) {
    let region = STATES.serverRegions[regionName], value = regionName, label = `${region.shortName} - ${regionName}`;
    if (region.isDefault) {
     if (label += ` (${t("default")})`, value = "default", selectedValue === regionName) selectedValue = "default";
    }
    setting.options[value] = label;
+   let $option = CE("option", { value }, label), continent = continents[region.contintent];
+   if (!continent.children) continent.children = [];
+   continent.children.push($option);
   }
-  for (let value in setting.options) {
-   let label = setting.options[value], $option = CE("option", { value }, label);
-   $control.appendChild($option);
+  let fragment = document.createDocumentFragment(), key;
+  for (key in continents) {
+   let continent = continents[key];
+   if (!continent.children) continue;
+   fragment.appendChild(CE("optgroup", {
+    label: continent.label
+   }, ...continent.children));
   }
-  return $control.disabled = Object.keys(STATES.serverRegions).length === 0, $control.value = selectedValue, $control;
+  return $control.appendChild(fragment), $control.disabled = Object.keys(STATES.serverRegions).length === 0, $control.value = selectedValue, $control;
  }
  renderSettingRow(settingTab, $tabContent, settingTabContent, setting) {
   if (typeof setting === "string") setting = {
@@ -5035,22 +5068,22 @@ class StreamBadges {
  }
 }
 class XcloudInterceptor {
- static SERVER_EMOJIS = {
-  AustraliaEast: "🇦🇺",
-  AustraliaSouthEast: "🇦🇺",
-  BrazilSouth: "🇧🇷",
-  EastUS: "🇺🇸",
-  EastUS2: "🇺🇸",
-  JapanEast: "🇯🇵",
-  KoreaCentral: "🇰🇷",
-  MexicoCentral: "🇲🇽",
-  NorthCentralUs: "🇺🇸",
-  SouthCentralUS: "🇺🇸",
-  SwedenCentral: "🇸🇪",
-  UKSouth: "🇬🇧",
-  WestEurope: "🇪🇺",
-  WestUS: "🇺🇸",
-  WestUS2: "🇺🇸"
+ static SERVER_EXTRA_INFO = {
+  EastUS: ["🇺🇸", "america-north"],
+  EastUS2: ["🇺🇸", "america-north"],
+  NorthCentralUs: ["🇺🇸", "america-north"],
+  SouthCentralUS: ["🇺🇸", "america-north"],
+  WestUS: ["🇺🇸", "america-north"],
+  WestUS2: ["🇺🇸", "america-north"],
+  MexicoCentral: ["🇲🇽", "america-north"],
+  BrazilSouth: ["🇧🇷", "america-south"],
+  JapanEast: ["🇯🇵", "asia"],
+  KoreaCentral: ["🇰🇷", "asia"],
+  AustraliaEast: ["🇦🇺", "australia"],
+  AustraliaSouthEast: ["🇦🇺", "australia"],
+  SwedenCentral: ["🇸🇪", "europe"],
+  UKSouth: ["🇬🇧", "europe"],
+  WestEurope: ["🇪🇺", "europe"]
  };
  static async handleLogin(request, init) {
   let bypassServer = getPref("server_bypass_restriction");
@@ -5062,14 +5095,13 @@ class XcloudInterceptor {
   if (response.status !== 200) return BxEvent.dispatch(window, BxEvent.XCLOUD_SERVERS_UNAVAILABLE), response;
   let obj = await response.clone().json();
   RemotePlayManager.getInstance().xcloudToken = obj.gsToken;
-  let serverRegex = /\/\/(\w+)\./, serverEmojis = XcloudInterceptor.SERVER_EMOJIS;
-  for (let region of obj.offeringSettings.regions) {
+  let serverRegex = /\/\/(\w+)\./, serverExtra = XcloudInterceptor.SERVER_EXTRA_INFO, region;
+  for (region of obj.offeringSettings.regions) {
    let { name: regionName, name: shortName } = region;
    if (region.isDefault) STATES.selectedRegion = Object.assign({}, region);
    let match = serverRegex.exec(region.baseUri);
-   if (match) {
-    if (shortName = match[1], serverEmojis[regionName]) shortName = serverEmojis[regionName] + " " + shortName;
-   }
+   if (match) if (shortName = match[1], serverExtra[regionName]) shortName = serverExtra[regionName][0] + " " + shortName, region.contintent = serverExtra[regionName][1];
+    else region.contintent = "other";
    region.shortName = shortName.toUpperCase(), STATES.serverRegions[region.name] = Object.assign({}, region);
   }
   BxEvent.dispatch(window, BxEvent.XCLOUD_SERVERS_READY);
