@@ -203,6 +203,11 @@ export class NavigationDialogManager {
                 $label = $parent.querySelector<HTMLElement>('div')!;
             }
 
+            // Reduce width if it has <optgroup>
+            if ($select.querySelector('optgroup')) {
+                width -= 15;
+            }
+
             // Set min-width
             $label.style.minWidth = width + 'px';
             $parent.dataset.calculated = 'true';
