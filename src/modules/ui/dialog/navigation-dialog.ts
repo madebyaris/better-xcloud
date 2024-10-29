@@ -239,7 +239,7 @@ export class NavigationDialogManager {
                 } else if (keyCode === 'Enter' || keyCode === 'NumpadEnter' || keyCode === 'Space') {
                     if (!($target instanceof HTMLInputElement && $target.type === 'text')) {
                         handled = true;
-                        $target.dispatchEvent(new MouseEvent('click'));
+                        $target.dispatchEvent(new MouseEvent('click', {bubbles: true}));
                     }
                 } else if (keyCode === 'Escape') {
                     handled = true;
@@ -366,7 +366,7 @@ export class NavigationDialogManager {
             }
 
             if (releasedButton === GamepadKey.A) {
-                document.activeElement && document.activeElement.dispatchEvent(new MouseEvent('click'));
+                document.activeElement && document.activeElement.dispatchEvent(new MouseEvent('click', {bubbles: true}));
                 return;
             } else if (releasedButton === GamepadKey.B) {
                 this.hide();

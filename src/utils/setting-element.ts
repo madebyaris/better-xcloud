@@ -168,7 +168,6 @@ export class SettingElement {
         let isHolding = false;
 
         const clearIntervalId = () => {
-            console.log('clearIntervalId');
             intervalId && clearInterval(intervalId);
             intervalId = null;
         }
@@ -287,7 +286,6 @@ export class SettingElement {
         updateButtonsVisibility();
 
         const buttonPressed = (e: Event, $btn: HTMLElement) => {
-            console.log('changeValue');
             let value = parseInt(controlValue);
 
             const btnType = $btn.dataset.type;
@@ -312,7 +310,6 @@ export class SettingElement {
                 return;
             }
 
-            console.log('click');
             const $btn = (e.target as HTMLElement).closest('button') as HTMLElement;
             $btn && buttonPressed(e, $btn);
 
@@ -321,7 +318,6 @@ export class SettingElement {
         };
 
         const onPointerDown = (e: PointerEvent) => {
-            console.log('down');
             clearIntervalId();
 
             const $btn = (e.target as HTMLElement).closest('button') as HTMLElement;
@@ -357,7 +353,7 @@ export class SettingElement {
         $wrapper.addEventListener('pointerdown', onPointerDown);
         $wrapper.addEventListener('contextmenu', onContextMenu);
         setNearby($wrapper, {
-            focus: $range || $btnInc,
+            focus: options.hideSlider ? $btnInc : $range,
         })
 
         return $wrapper;
