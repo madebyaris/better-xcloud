@@ -4044,6 +4044,11 @@ var ENDING_CHUNKS_PATCH_NAME = "loadingEndingChunks", LOG_TAG2 = "Patcher", PATC
   let newCode = "if (window.BX_REMOTE_PLAY_CONFIG) return;";
   return str.replace(text, text + newCode);
  },
+ remotePlayWebTitle(str) {
+  let text = "titleTemplate:void 0,title:", index = str.indexOf(text);
+  if (index < 0) return !1;
+  return str = PatcherUtils.insertAt(str, index + text.length, `!!window.BX_REMOTE_PLAY_CONFIG ? "${t("remote-play")} - Better xCloud" :`), str;
+ },
  blockWebRtcStatsCollector(str) {
   let text = "this.shouldCollectStats=!0";
   if (!str.includes(text)) return !1;
@@ -4450,6 +4455,7 @@ if (this.baseStorageKey in window.BX_EXPOSED.overrideSettings) {
   "remotePlayDirectConnectUrl",
   "remotePlayDisableAchievementToast",
   "remotePlayRecentlyUsedTitleIds",
+  "remotePlayWebTitle",
   STATES.userAgent.capabilities.touch && "patchUpdateInputConfigurationAsync"
  ] : [],
  ...BX_FLAGS.EnableXcloudLogging ? [

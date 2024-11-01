@@ -17,6 +17,7 @@ import { UiSection } from "@/enums/ui-sections.js";
 import { PrefKey } from "@/enums/pref-keys.js";
 import { getPref, StreamTouchController } from "@/utils/settings-storages/global-settings-storage";
 import { GamePassCloudGallery } from "@/enums/game-pass-gallery.js";
+import { t } from "@/utils/translation.js";
 
 type PatchArray = (keyof typeof PATCHES)[];
 
@@ -174,17 +175,16 @@ const PATCHES = {
     },
 
     // Remote Play: change web page's title
-    /*
     remotePlayWebTitle(str: string) {
-        let text = '"undefined"!==typeof e&&document.title!==e';
-        if (!str.includes(text)) {
+        let text = 'titleTemplate:void 0,title:';
+        const index = str.indexOf(text);
+        if (index < 0) {
             return false;
         }
 
-        const newCode = `if (window.BX_REMOTE_PLAY_CONFIG) { e = "${t('remote-play')} - ${t('better-xcloud')}"; }`;
-        return str.replace(text, newCode + text);
+        str = PatcherUtils.insertAt(str, index + text.length, `!!window.BX_REMOTE_PLAY_CONFIG ? "${t('remote-play')} - Better xCloud" :`);
+        return str;
     },
-    */
 
     // Block WebRTC stats collector
     blockWebRtcStatsCollector(str: string) {
@@ -1044,6 +1044,7 @@ let PATCH_ORDERS: PatchArray = [
         'remotePlayDirectConnectUrl',
         'remotePlayDisableAchievementToast',
         'remotePlayRecentlyUsedTitleIds',
+        'remotePlayWebTitle',
         STATES.userAgent.capabilities.touch && 'patchUpdateInputConfigurationAsync',
     ] : []),
 
