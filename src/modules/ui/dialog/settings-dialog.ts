@@ -693,12 +693,12 @@ export class SettingsNavigationDialog extends NavigationDialog {
 
         // Get recommended settings from GitHub
         try {
-            let {manufacturer, board, model} = androidInfo!;
-            manufacturer = normalize(manufacturer);
+            let {brand, board, model} = androidInfo!;
+            brand = normalize(brand);
             board = normalize(board);
             model = normalize(model);
 
-            const url = `https://raw.githubusercontent.com/redphx/better-xcloud/gh-pages/devices/${manufacturer}/${board}-${model}.json`;
+            const url = `https://raw.githubusercontent.com/redphx/better-xcloud/gh-pages/devices/${brand}/${board}-${model}.json`;
             const response = await NATIVE_FETCH(url);
             const json = (await response.json()) as RecommendedSettings;
             const recommended: PartialRecord<PrefKey, any> = {};

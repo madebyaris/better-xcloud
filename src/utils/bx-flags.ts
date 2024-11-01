@@ -16,6 +16,7 @@ export type BxFlags = {
 
         androidInfo?: {
             manufacturer: string,
+            brand: string,
             board: string,
             model: string,
         },

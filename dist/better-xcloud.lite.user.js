@@ -3944,9 +3944,9 @@ class SettingsNavigationDialog extends NavigationDialog {
    return str.toLowerCase().trim().replaceAll(/\s+/g, "-").replaceAll(/-+/g, "-");
   }
   try {
-   let { manufacturer, board, model } = androidInfo;
-   manufacturer = normalize(manufacturer), board = normalize(board), model = normalize(model);
-   let url = `https://raw.githubusercontent.com/redphx/better-xcloud/gh-pages/devices/${manufacturer}/${board}-${model}.json`, json = await (await NATIVE_FETCH(url)).json(), recommended = {};
+   let { brand, board, model } = androidInfo;
+   brand = normalize(brand), board = normalize(board), model = normalize(model);
+   let url = `https://raw.githubusercontent.com/redphx/better-xcloud/gh-pages/devices/${brand}/${board}-${model}.json`, json = await (await NATIVE_FETCH(url)).json(), recommended = {};
    if (json.schema_version !== 1) return null;
    let scriptSettings = json.settings.script;
    if (scriptSettings._base) {
