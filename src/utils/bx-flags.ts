@@ -1,6 +1,6 @@
 import { BxLogger } from "./bx-logger";
 
-type BxFlags = {
+export type BxFlags = {
     Debug: boolean;
 
     CheckForUpdate: boolean;
@@ -15,7 +15,9 @@ type BxFlags = {
         userAgent?: string,
 
         androidInfo?: {
+            manufacturer: string,
             board: string,
+            model: string,
         },
     }
 }

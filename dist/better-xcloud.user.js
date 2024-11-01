@@ -5101,9 +5101,14 @@ class SettingsNavigationDialog extends NavigationDialog {
  reloadPage() {
   this.$btnGlobalReload.disabled = !0, this.$btnGlobalReload.firstElementChild.textContent = t("settings-reloading"), this.hide(), FullscreenText.getInstance().show(t("settings-reloading")), window.location.reload();
  }
- async getRecommendedSettings(deviceCode) {
+ async getRecommendedSettings(androidInfo) {
+  function normalize(str) {
+   return str.toLowerCase().trim().replaceAll(/\s+/g, "-").replaceAll(/-+/g, "-");
+  }
   try {
-   let json = await (await NATIVE_FETCH(`https://raw.githubusercontent.com/redphx/better-xcloud/gh-pages/devices/${deviceCode.toLowerCase()}.json`)).json(), recommended = {};
+   let { manufacturer, board, model } = androidInfo;
+   manufacturer = normalize(manufacturer), board = normalize(board), model = normalize(model);
+   let url = `https://raw.githubusercontent.com/redphx/better-xcloud/gh-pages/devices/${manufacturer}/${board}-${model}.json`, json = await (await NATIVE_FETCH(url)).json(), recommended = {};
    if (json.schema_version !== 1) return null;
    let scriptSettings = json.settings.script;
    if (scriptSettings._base) {
@@ -5161,10 +5166,7 @@ class SettingsNavigationDialog extends NavigationDialog {
   }
   let recommendedDevice = "";
   if (BX_FLAGS.DeviceInfo.deviceType.includes("android")) {
-   if (BX_FLAGS.DeviceInfo.androidInfo) {
-    let deviceCode = BX_FLAGS.DeviceInfo.androidInfo.board;
-    recommendedDevice = await this.getRecommendedSettings(deviceCode);
-   }
+   if (BX_FLAGS.DeviceInfo.androidInfo) recommendedDevice = await this.getRecommendedSettings(BX_FLAGS.DeviceInfo.androidInfo);
   }
   let hasRecommendedSettings = Object.keys(this.suggestedSettings.recommended).length > 0, deviceType = BX_FLAGS.DeviceInfo.deviceType;
   if (deviceType === "android-handheld") this.addDefaultSuggestedSetting("stream_touch_controller", "off"), this.addDefaultSuggestedSetting("controller_device_vibration", "on");

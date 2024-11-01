@@ -19,7 +19,7 @@ import { setNearby } from "@/utils/navigation-utils";
 import { PatcherCache } from "@/modules/patcher";
 import { UserAgentProfile } from "@/enums/user-agent";
 import { UserAgent } from "@/utils/user-agent";
-import { BX_FLAGS, NATIVE_FETCH } from "@/utils/bx-flags";
+import { BX_FLAGS, NATIVE_FETCH, type BxFlags } from "@/utils/bx-flags";
 import { copyToClipboard } from "@/utils/utils";
 import { GamepadKey } from "@/enums/mkb";
 import { PrefKey, StorageKey } from "@/enums/pref-keys";
@@ -683,10 +683,23 @@ export class SettingsNavigationDialog extends NavigationDialog {
         window.location.reload();
     }
 
-    private async getRecommendedSettings(deviceCode: string): Promise<string | null> {
+    private async getRecommendedSettings(androidInfo: BxFlags['DeviceInfo']['androidInfo']): Promise<string | null> {
+        function normalize(str: string) {
+            return str.toLowerCase()
+                .trim()
+                .replaceAll(/\s+/g, '-')
+                .replaceAll(/-+/g, '-');
+        }
+
         // Get recommended settings from GitHub
         try {
-            const response = await NATIVE_FETCH(`https://raw.githubusercontent.com/redphx/better-xcloud/gh-pages/devices/${deviceCode.toLowerCase()}.json`);
+            let {manufacturer, board, model} = androidInfo!;
+            manufacturer = normalize(manufacturer);
+            board = normalize(board);
+            model = normalize(model);
+
+            const url = `https://raw.githubusercontent.com/redphx/better-xcloud/gh-pages/devices/${manufacturer}/${board}-${model}.json`;
+            const response = await NATIVE_FETCH(url);
             const json = (await response.json()) as RecommendedSettings;
             const recommended: PartialRecord<PrefKey, any> = {};
 
@@ -804,11 +817,17 @@ export class SettingsNavigationDialog extends NavigationDialog {
 
         if (BX_FLAGS.DeviceInfo.deviceType.includes('android')) {
             if (BX_FLAGS.DeviceInfo.androidInfo) {
-                const deviceCode = BX_FLAGS.DeviceInfo.androidInfo.board;
-                recommendedDevice = await this.getRecommendedSettings(deviceCode);
+                recommendedDevice = await this.getRecommendedSettings(BX_FLAGS.DeviceInfo.androidInfo);
             }
         }
-        // recommendedDevice = await this.getRecommendedSettings('foster_e');
+
+        /*
+        recommendedDevice = await this.getRecommendedSettings({
+            manufacturer: 'Lenovo',
+            board: 'kona',
+            model: 'Lenovo TB-9707F',
+        });
+        */
 
         const hasRecommendedSettings = Object.keys(this.suggestedSettings.recommended).length > 0;
 
