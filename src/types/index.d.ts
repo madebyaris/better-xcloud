@@ -44,7 +44,6 @@ type BxStates = {
     isSignedIn: boolean;
 
     isPlaying: boolean;
-    appContext: any | null;
 
     browser: {
         capabilities: {

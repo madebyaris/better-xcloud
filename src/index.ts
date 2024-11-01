@@ -20,7 +20,6 @@ import { Patcher } from "@modules/patcher";
 import { RemotePlayManager } from "@/modules/remote-play-manager";
 import { onHistoryChanged, patchHistoryMethod } from "@utils/history";
 import { VibrationManager } from "@modules/vibration-manager";
-import { overridePreloadState } from "@utils/preload-state";
 import { disableAdobeAudienceManager, patchAudioContext, patchCanvasContext, patchMeControl, patchPointerLockApi, patchRtcCodecs, patchRtcPeerConnection, patchVideoApi } from "@utils/monkey-patches";
 import { AppInterface, STATES } from "@utils/global";
 import { BxLogger } from "@utils/bx-logger";
@@ -362,7 +361,6 @@ function main() {
     if (isFullVersion()) {
         updatePollingRate();
         STATES.userAgent.capabilities.touch && TouchController.updateCustomList();
-        overridePreloadState();
 
         VibrationManager.initialSetup();
 

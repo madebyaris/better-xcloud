@@ -985,6 +985,16 @@ if (this.baseStorageKey in window.BX_EXPOSED.overrideSettings) {
 
         return str;
     },
+
+    modifyPreloadedState(str: string) {
+        let text = '=window.__PRELOADED_STATE__;';
+        if (!str.includes(text)) {
+            return false;
+        }
+
+        str = str.replace(text, '=window.BX_EXPOSED.modifyPreloadedState(window.__PRELOADED_STATE__);');
+        return str;
+    },
 };
 
 let PATCH_ORDERS: PatchArray = [
@@ -994,6 +1004,8 @@ let PATCH_ORDERS: PatchArray = [
         'disableNativeRequestPointerLock',
         'exposeInputSink',
     ] : []),
+
+    'modifyPreloadedState',
 
     'optimizeGameSlugGenerator',
 

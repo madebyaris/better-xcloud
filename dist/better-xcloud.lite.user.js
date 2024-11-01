@@ -114,7 +114,6 @@ var userAgent = window.navigator.userAgent.toLowerCase(), isTv = userAgent.inclu
  gsToken: "",
  isSignedIn: !1,
  isPlaying: !1,
- appContext: {},
  browser: {
   capabilities: {
    touch: browserHasTouchSupport,
@@ -4430,6 +4429,7 @@ class SettingsNavigationDialog extends NavigationDialog {
 }
 var BxExposed = {
  getTitleInfo: () => STATES.currentStream.titleInfo,
+ modifyPreloadedState: !1,
  modifyTitleInfo: !1,
  setupGainNode: ($media, audioStream) => {
   if ($media instanceof HTMLAudioElement) $media.muted = !0, $media.addEventListener("playing", (e) => {

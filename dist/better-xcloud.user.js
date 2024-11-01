@@ -116,7 +116,6 @@ var userAgent = window.navigator.userAgent.toLowerCase(), isTv = userAgent.inclu
  gsToken: "",
  isSignedIn: !1,
  isPlaying: !1,
- appContext: {},
  browser: {
   capabilities: {
    touch: browserHasTouchSupport,
@@ -4411,6 +4410,11 @@ if (this.baseStorageKey in window.BX_EXPOSED.overrideSettings) {
   let text = "/[;,/?:@&=+_`~$%#^*()!^\\u2122\\xae\\xa9]/g";
   if (!str.includes(text)) return !1;
   return str = str.replace(text, "window.BX_EXPOSED.GameSlugRegexes[0]"), str = str.replace("/ {2,}/g", "window.BX_EXPOSED.GameSlugRegexes[1]"), str = str.replace("/ /g", "window.BX_EXPOSED.GameSlugRegexes[2]"), str;
+ },
+ modifyPreloadedState(str) {
+  let text = "=window.__PRELOADED_STATE__;";
+  if (!str.includes(text)) return !1;
+  return str = str.replace(text, "=window.BX_EXPOSED.modifyPreloadedState(window.__PRELOADED_STATE__);"), str;
  }
 }, PATCH_ORDERS = [
  ...getPref("native_mkb_enabled") === "on" ? [
@@ -4419,6 +4423,7 @@ if (this.baseStorageKey in window.BX_EXPOSED.overrideSettings) {
   "disableNativeRequestPointerLock",
   "exposeInputSink"
  ] : [],
+ "modifyPreloadedState",
  "optimizeGameSlugGenerator",
  "detectBrowserRouterReady",
  "patchRequestInfoCrash",
@@ -5776,6 +5781,30 @@ class ControllerShortcut {
 }
 var BxExposed = {
  getTitleInfo: () => STATES.currentStream.titleInfo,
+ modifyPreloadedState: (state) => {
+  let LOG_TAG3 = "PreloadState";
+  try {
+   state.appContext.requestInfo.userAgent = window.navigator.userAgent;
+  } catch (e) {
+   BxLogger.error(LOG_TAG3, e);
+  }
+  try {
+   let sigls = state.xcloud.sigls;
+   if (STATES.userAgent.capabilities.touch) {
+    let customList = TouchController.getCustomList(), allGames = sigls["29a81209-df6f-41fd-a528-2ae6b91f719c"].data.products;
+    customList = customList.filter((id2) => allGames.includes(id2)), sigls["9c86f07a-f3e8-45ad-82a0-a1f759597059"]?.data.products.push(...customList);
+   }
+  } catch (e) {
+   BxLogger.error(LOG_TAG3, e);
+  }
+  try {
+   let sigls = state.xcloud.sigls;
+   if (BX_FLAGS.ForceNativeMkbTitles) sigls["8fa264dd-124f-4af3-97e8-596fcdf4b486"]?.data.products.push(...BX_FLAGS.ForceNativeMkbTitles);
+  } catch (e) {
+   BxLogger.error(LOG_TAG3, e);
+  }
+  return state;
+ },
  modifyTitleInfo: function(titleInfo) {
   titleInfo = deepClone(titleInfo);
   let supportedInputTypes = titleInfo.details.supportedInputTypes;
@@ -6963,34 +6992,6 @@ function onHistoryChanged(e) {
  if ($settings) $settings.classList.add("bx-gone");
  NavigationDialogManager.getInstance().hide(), LoadingScreen.reset(), window.setTimeout(HeaderSection.watchHeader, 2000), BxEvent.dispatch(window, BxEvent.STREAM_STOPPED);
 }
-var LOG_TAG3 = "PreloadState";
-function overridePreloadState() {
- let _state;
- Object.defineProperty(window, "__PRELOADED_STATE__", {
-  configurable: !0,
-  get: () => {
-   return _state;
-  },
-  set: (state) => {
-   try {
-    state.appContext.requestInfo.userAgent = window.navigator.userAgent;
-   } catch (e) {
-    BxLogger.error(LOG_TAG3, e);
-   }
-   if (STATES.userAgent.capabilities.touch) try {
-     let sigls = state.xcloud.sigls;
-     if ("9c86f07a-f3e8-45ad-82a0-a1f759597059" in sigls) {
-      let customList = TouchController.getCustomList(), allGames = sigls["29a81209-df6f-41fd-a528-2ae6b91f719c"].data.products;
-      customList = customList.filter((id2) => allGames.includes(id2)), sigls["9c86f07a-f3e8-45ad-82a0-a1f759597059"]?.data.products.push(...customList);
-     }
-     if (BX_FLAGS.ForceNativeMkbTitles && "8fa264dd-124f-4af3-97e8-596fcdf4b486" in sigls) sigls["8fa264dd-124f-4af3-97e8-596fcdf4b486"]?.data.products.push(...BX_FLAGS.ForceNativeMkbTitles);
-    } catch (e) {
-     BxLogger.error(LOG_TAG3, e);
-    }
-   _state = state, STATES.appContext = deepClone(state.appContext);
-  }
- });
-}
 function setCodecPreferences(sdp, preferredCodec) {
  let h264Pattern = /a=fmtp:(\d+).*profile-level-id=([0-9a-f]{6})/g, profilePrefix = preferredCodec === "high" ? "4d" : preferredCodec === "low" ? "420" : "42e", preferredCodecIds = [], matches = sdp.matchAll(h264Pattern) || [];
  for (let match of matches) {
@@ -8044,7 +8045,7 @@ window.addEventListener(BxEvent.CAPTURE_SCREENSHOT, (e) => {
 function main() {
  if (getPref("game_msfs2020_force_native_mkb")) BX_FLAGS.ForceNativeMkbTitles.push("9PMQDM08SNK9");
  if (patchRtcPeerConnection(), patchRtcCodecs(), interceptHttpRequests(), patchVideoApi(), patchCanvasContext(), AppInterface && patchPointerLockApi(), getPref("audio_enable_volume_control") && patchAudioContext(), getPref("block_tracking")) patchMeControl(), disableAdobeAudienceManager();
- if (RootDialogObserver.waitForRootDialog(), addCss(), GuideMenu.getInstance().addEventListeners(), StreamStatsCollector.setupEvents(), StreamBadges.setupEvents(), StreamStats.setupEvents(), updatePollingRate(), STATES.userAgent.capabilities.touch && TouchController.updateCustomList(), overridePreloadState(), VibrationManager.initialSetup(), BX_FLAGS.CheckForUpdate && checkForUpdate(), Patcher.init(), disablePwa(), getPref("xhome_enabled")) RemotePlayManager.detect();
+ if (RootDialogObserver.waitForRootDialog(), addCss(), GuideMenu.getInstance().addEventListeners(), StreamStatsCollector.setupEvents(), StreamBadges.setupEvents(), StreamStats.setupEvents(), updatePollingRate(), STATES.userAgent.capabilities.touch && TouchController.updateCustomList(), VibrationManager.initialSetup(), BX_FLAGS.CheckForUpdate && checkForUpdate(), Patcher.init(), disablePwa(), getPref("xhome_enabled")) RemotePlayManager.detect();
  if (getPref("stream_touch_controller") === "all") TouchController.setup();
  if (getPref("mkb_enabled") && AppInterface) STATES.pointerServerPort = AppInterface.startPointerServer() || 9269, BxLogger.info("startPointerServer", "Port", STATES.pointerServerPort.toString());
  if (getPref("ui_game_card_show_wait_time") && GameTile.setup(), EmulatedMkbHandler.setupEvents(), getPref("controller_show_connection_status")) window.addEventListener("gamepadconnected", (e) => showGamepadToast(e.gamepad)), window.addEventListener("gamepaddisconnected", (e) => showGamepadToast(e.gamepad));

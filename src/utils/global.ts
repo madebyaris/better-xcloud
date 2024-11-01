@@ -23,7 +23,6 @@ export const STATES: BxStates = {
     isSignedIn: false,
 
     isPlaying: false,
-    appContext: {},
 
     browser: {
         capabilities: {

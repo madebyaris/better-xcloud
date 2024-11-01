@@ -8,6 +8,8 @@ import { BX_FLAGS } from "./bx-flags";
 import { NavigationDialogManager } from "@/modules/ui/dialog/navigation-dialog";
 import { PrefKey } from "@/enums/pref-keys";
 import { getPref, StreamTouchController } from "./settings-storages/global-settings-storage";
+import { GamePassCloudGallery } from "@/enums/game-pass-gallery";
+import { TouchController } from "@/modules/touch-controller";
 
 export enum SupportedInputType {
     CONTROLLER = 'Controller',
@@ -21,6 +23,48 @@ export type SupportedInputTypeValue = (typeof SupportedInputType)[keyof typeof S
 
 export const BxExposed = {
     getTitleInfo: () => STATES.currentStream.titleInfo,
+
+    modifyPreloadedState: isFullVersion() && ((state: any) => {
+        let LOG_TAG = 'PreloadState';
+
+        // Override User-Agent
+        try {
+            state.appContext.requestInfo.userAgent = window.navigator.userAgent;
+        } catch (e) {
+            BxLogger.error(LOG_TAG, e);
+        }
+
+        // Add list of games with custom layouts to the official list
+        try {
+            const sigls = state.xcloud.sigls;
+            if (STATES.userAgent.capabilities.touch) {
+                // The list of custom touch controls
+                let customList = TouchController.getCustomList();
+
+                // Remove non-cloud games from the official list
+                const allGames = sigls[GamePassCloudGallery.ALL].data.products;
+                customList = customList.filter(id => allGames.includes(id));
+
+                // Add to the official touchlist
+                sigls[GamePassCloudGallery.TOUCH]?.data.products.push(...customList);
+            }
+        } catch (e) {
+            BxLogger.error(LOG_TAG, e);
+        }
+
+        // Add forced Native MKB titles to the official list
+        try {
+            const sigls = state.xcloud.sigls;
+            if (BX_FLAGS.ForceNativeMkbTitles) {
+                // Add to the official list
+                sigls[GamePassCloudGallery.NATIVE_MKB]?.data.products.push(...BX_FLAGS.ForceNativeMkbTitles);
+            }
+        } catch (e) {
+            BxLogger.error(LOG_TAG, e);
+        }
+
+        return state;
+    }),
 
     modifyTitleInfo: isFullVersion() && function(titleInfo: XcloudTitleInfo): XcloudTitleInfo {
         // Clone the object since the original is read-only
