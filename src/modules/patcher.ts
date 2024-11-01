@@ -1222,20 +1222,31 @@ export class Patcher {
 }
 
 export class PatcherCache {
-    static #KEY_CACHE = 'better_xcloud_patches_cache';
-    static #KEY_SIGNATURE = 'better_xcloud_patches_cache_signature';
+    private static readonly KEY_CACHE = 'better_xcloud_patches_cache';
+    private static readonly KEY_SIGNATURE = 'better_xcloud_patches_cache_signature';
 
-    static #CACHE: any;
+    private static CACHE: any;
 
-    static #isInitialized = false;
+    private static isInitialized = false;
 
     /**
      * Get patch's signature
      */
-    static #getSignature(): number {
+    private static getSignature(): number {
         const scriptVersion = SCRIPT_VERSION;
-        const webVersion = (document.querySelector<HTMLMetaElement>('meta[name=gamepass-app-version]'))?.content;
         const patches = JSON.stringify(ALL_PATCHES);
+
+        // Get client.js's hash
+        let webVersion = '';
+        const $link = document.querySelector<HTMLLinkElement>('link[data-chunk="client"][href*="/client."]');
+        if ($link) {
+            const match = /\/client\.([^\.]+)\.js/.exec($link.href);
+            match && (webVersion = match[1]);
+        } else {
+            // Get version from <meta>
+            // Sometimes this value is missing
+            webVersion = (document.querySelector<HTMLMetaElement>('meta[name=gamepass-app-version]'))?.content ?? '';
+        }
 
         // Calculate signature
         const sig = hashCode(scriptVersion + webVersion + patches)
@@ -1244,18 +1255,18 @@ export class PatcherCache {
 
     static clear() {
         // Clear cache
-        window.localStorage.removeItem(PatcherCache.#KEY_CACHE);
-        PatcherCache.#CACHE = {};
+        window.localStorage.removeItem(PatcherCache.KEY_CACHE);
+        PatcherCache.CACHE = {};
     }
 
     static checkSignature() {
-        const storedSig = window.localStorage.getItem(PatcherCache.#KEY_SIGNATURE) || 0;
-        const currentSig = PatcherCache.#getSignature();
+        const storedSig = window.localStorage.getItem(PatcherCache.KEY_SIGNATURE) || 0;
+        const currentSig = PatcherCache.getSignature();
 
         if (currentSig !== parseInt(storedSig as string)) {
             // Save new signature
             BxLogger.warning(LOG_TAG, 'Signature changed');
-            window.localStorage.setItem(PatcherCache.#KEY_SIGNATURE, currentSig.toString());
+            window.localStorage.setItem(PatcherCache.KEY_SIGNATURE, currentSig.toString());
 
             PatcherCache.clear();
         } else {
@@ -1263,10 +1274,10 @@ export class PatcherCache {
         }
     }
 
-    static #cleanupPatches(patches: PatchArray): PatchArray {
+    private static cleanupPatches(patches: PatchArray): PatchArray {
         return patches.filter(item => {
-            for (const id in PatcherCache.#CACHE) {
-                const cached = PatcherCache.#CACHE[id];
+            for (const id in PatcherCache.CACHE) {
+                const cached = PatcherCache.CACHE[id];
 
                 if (cached.includes(item)) {
                     return false;
@@ -1278,16 +1289,16 @@ export class PatcherCache {
     }
 
     static getPatches(id: string): PatchArray {
-        return PatcherCache.#CACHE[id];
+        return PatcherCache.CACHE[id];
     }
 
     static saveToCache(subCache: Record<string, PatchArray>) {
         for (const id in subCache) {
             const patchNames = subCache[id];
 
-            let data = PatcherCache.#CACHE[id];
+            let data = PatcherCache.CACHE[id];
             if (!data) {
-                PatcherCache.#CACHE[id] = patchNames;
+                PatcherCache.CACHE[id] = patchNames;
             } else {
                 for (const patchName of patchNames) {
                     if (!data.includes(patchName)) {
@@ -1298,20 +1309,20 @@ export class PatcherCache {
         }
 
         // Save to storage
-        window.localStorage.setItem(PatcherCache.#KEY_CACHE, JSON.stringify(PatcherCache.#CACHE));
+        window.localStorage.setItem(PatcherCache.KEY_CACHE, JSON.stringify(PatcherCache.CACHE));
     }
 
     static init() {
-        if (PatcherCache.#isInitialized) {
+        if (PatcherCache.isInitialized) {
             return;
         }
-        PatcherCache.#isInitialized = true;
+        PatcherCache.isInitialized = true;
 
         PatcherCache.checkSignature();
 
         // Read cache from storage
-        PatcherCache.#CACHE = JSON.parse(window.localStorage.getItem(PatcherCache.#KEY_CACHE) || '{}');
-        BxLogger.info(LOG_TAG, PatcherCache.#CACHE);
+        PatcherCache.CACHE = JSON.parse(window.localStorage.getItem(PatcherCache.KEY_CACHE) || '{}');
+        BxLogger.info(LOG_TAG, PatcherCache.CACHE);
 
         if (window.location.pathname.includes('/play/')) {
             PATCH_ORDERS.push(...PLAYING_PATCH_ORDERS);
@@ -1320,8 +1331,8 @@ export class PatcherCache {
         }
 
         // Remove cached patches from PATCH_ORDERS & PLAYING_PATCH_ORDERS
-        PATCH_ORDERS = PatcherCache.#cleanupPatches(PATCH_ORDERS);
-        PLAYING_PATCH_ORDERS = PatcherCache.#cleanupPatches(PLAYING_PATCH_ORDERS);
+        PATCH_ORDERS = PatcherCache.cleanupPatches(PATCH_ORDERS);
+        PLAYING_PATCH_ORDERS = PatcherCache.cleanupPatches(PLAYING_PATCH_ORDERS);
 
         BxLogger.info(LOG_TAG, PATCH_ORDERS.slice(0));
         BxLogger.info(LOG_TAG, PLAYING_PATCH_ORDERS.slice(0));

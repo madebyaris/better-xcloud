@@ -4527,46 +4527,50 @@ class Patcher {
  }
 }
 class PatcherCache {
- static #KEY_CACHE = "better_xcloud_patches_cache";
- static #KEY_SIGNATURE = "better_xcloud_patches_cache_signature";
- static #CACHE;
- static #isInitialized = !1;
- static #getSignature() {
-  let scriptVersion = SCRIPT_VERSION, webVersion = document.querySelector("meta[name=gamepass-app-version]")?.content, patches = JSON.stringify(ALL_PATCHES);
+ static KEY_CACHE = "better_xcloud_patches_cache";
+ static KEY_SIGNATURE = "better_xcloud_patches_cache_signature";
+ static CACHE;
+ static isInitialized = !1;
+ static getSignature() {
+  let scriptVersion = SCRIPT_VERSION, patches = JSON.stringify(ALL_PATCHES), webVersion = "", $link = document.querySelector('link[data-chunk="client"][href*="/client."]');
+  if ($link) {
+   let match = /\/client\.([^\.]+)\.js/.exec($link.href);
+   match && (webVersion = match[1]);
+  } else webVersion = document.querySelector("meta[name=gamepass-app-version]")?.content ?? "";
   return hashCode(scriptVersion + webVersion + patches);
  }
  static clear() {
-  window.localStorage.removeItem(PatcherCache.#KEY_CACHE), PatcherCache.#CACHE = {};
+  window.localStorage.removeItem(PatcherCache.KEY_CACHE), PatcherCache.CACHE = {};
  }
  static checkSignature() {
-  let storedSig = window.localStorage.getItem(PatcherCache.#KEY_SIGNATURE) || 0, currentSig = PatcherCache.#getSignature();
-  if (currentSig !== parseInt(storedSig)) BxLogger.warning(LOG_TAG2, "Signature changed"), window.localStorage.setItem(PatcherCache.#KEY_SIGNATURE, currentSig.toString()), PatcherCache.clear();
+  let storedSig = window.localStorage.getItem(PatcherCache.KEY_SIGNATURE) || 0, currentSig = PatcherCache.getSignature();
+  if (currentSig !== parseInt(storedSig)) BxLogger.warning(LOG_TAG2, "Signature changed"), window.localStorage.setItem(PatcherCache.KEY_SIGNATURE, currentSig.toString()), PatcherCache.clear();
   else BxLogger.info(LOG_TAG2, "Signature unchanged");
  }
- static #cleanupPatches(patches) {
+ static cleanupPatches(patches) {
   return patches.filter((item2) => {
-   for (let id2 in PatcherCache.#CACHE)
-    if (PatcherCache.#CACHE[id2].includes(item2)) return !1;
+   for (let id2 in PatcherCache.CACHE)
+    if (PatcherCache.CACHE[id2].includes(item2)) return !1;
    return !0;
   });
  }
  static getPatches(id2) {
-  return PatcherCache.#CACHE[id2];
+  return PatcherCache.CACHE[id2];
  }
  static saveToCache(subCache) {
   for (let id2 in subCache) {
-   let patchNames = subCache[id2], data = PatcherCache.#CACHE[id2];
-   if (!data) PatcherCache.#CACHE[id2] = patchNames;
+   let patchNames = subCache[id2], data = PatcherCache.CACHE[id2];
+   if (!data) PatcherCache.CACHE[id2] = patchNames;
    else for (let patchName of patchNames)
      if (!data.includes(patchName)) data.push(patchName);
   }
-  window.localStorage.setItem(PatcherCache.#KEY_CACHE, JSON.stringify(PatcherCache.#CACHE));
+  window.localStorage.setItem(PatcherCache.KEY_CACHE, JSON.stringify(PatcherCache.CACHE));
  }
  static init() {
-  if (PatcherCache.#isInitialized) return;
-  if (PatcherCache.#isInitialized = !0, PatcherCache.checkSignature(), PatcherCache.#CACHE = JSON.parse(window.localStorage.getItem(PatcherCache.#KEY_CACHE) || "{}"), BxLogger.info(LOG_TAG2, PatcherCache.#CACHE), window.location.pathname.includes("/play/")) PATCH_ORDERS.push(...PLAYING_PATCH_ORDERS);
+  if (PatcherCache.isInitialized) return;
+  if (PatcherCache.isInitialized = !0, PatcherCache.checkSignature(), PatcherCache.CACHE = JSON.parse(window.localStorage.getItem(PatcherCache.KEY_CACHE) || "{}"), BxLogger.info(LOG_TAG2, PatcherCache.CACHE), window.location.pathname.includes("/play/")) PATCH_ORDERS.push(...PLAYING_PATCH_ORDERS);
   else PATCH_ORDERS.push(ENDING_CHUNKS_PATCH_NAME);
-  PATCH_ORDERS = PatcherCache.#cleanupPatches(PATCH_ORDERS), PLAYING_PATCH_ORDERS = PatcherCache.#cleanupPatches(PLAYING_PATCH_ORDERS), BxLogger.info(LOG_TAG2, PATCH_ORDERS.slice(0)), BxLogger.info(LOG_TAG2, PLAYING_PATCH_ORDERS.slice(0));
+  PATCH_ORDERS = PatcherCache.cleanupPatches(PATCH_ORDERS), PLAYING_PATCH_ORDERS = PatcherCache.cleanupPatches(PLAYING_PATCH_ORDERS), BxLogger.info(LOG_TAG2, PATCH_ORDERS.slice(0)), BxLogger.info(LOG_TAG2, PLAYING_PATCH_ORDERS.slice(0));
  }
 }
 class FullscreenText {
