@@ -4489,7 +4489,7 @@ class Patcher {
     if (arguments[1] === 0 || typeof arguments[1] === "function") valid = !0;
    }
    if (!valid) return nativeBind.apply(this, arguments);
-   if (PatcherCache.init(), typeof arguments[1] === "function") BxLogger.info(LOG_TAG2, "Restored Function.prototype.bind()"), Function.prototype.bind = nativeBind;
+   if (PatcherCache.getInstance().init(), typeof arguments[1] === "function") BxLogger.info(LOG_TAG2, "Restored Function.prototype.bind()"), Function.prototype.bind = nativeBind;
    let orgFunc = this, newFunc = (a, item2) => {
     Patcher.patch(item2), orgFunc(a, item2);
    };
@@ -4497,10 +4497,10 @@ class Patcher {
   };
  }
  static patch(item) {
-  let patchesToCheck, appliedPatches, patchesMap = {};
+  let patchesToCheck, appliedPatches, patchesMap = {}, patcherCache = PatcherCache.getInstance();
   for (let id in item[1]) {
    appliedPatches = [];
-   let cachedPatches = PatcherCache.getPatches(id);
+   let cachedPatches = patcherCache.getPatches(id);
    if (cachedPatches) patchesToCheck = cachedPatches.slice(0), patchesToCheck.push(...PATCH_ORDERS);
    else patchesToCheck = PATCH_ORDERS.slice(0);
    if (!patchesToCheck.length) continue;
@@ -4520,18 +4520,20 @@ class Patcher {
     }
    if (appliedPatches.length) patchesMap[id] = appliedPatches;
   }
-  if (Object.keys(patchesMap).length) PatcherCache.saveToCache(patchesMap);
+  if (Object.keys(patchesMap).length) patcherCache.saveToCache(patchesMap);
  }
  static init() {
   Patcher.#patchFunctionBind();
  }
 }
 class PatcherCache {
- static KEY_CACHE = "better_xcloud_patches_cache";
- static KEY_SIGNATURE = "better_xcloud_patches_cache_signature";
- static CACHE;
- static isInitialized = !1;
- static getSignature() {
+ static instance;
+ static getInstance = () => PatcherCache.instance ?? (PatcherCache.instance = new PatcherCache);
+ KEY_CACHE = "better_xcloud_patches_cache";
+ KEY_SIGNATURE = "better_xcloud_patches_cache_signature";
+ CACHE;
+ isInitialized = !1;
+ getSignature() {
   let scriptVersion = SCRIPT_VERSION, patches = JSON.stringify(ALL_PATCHES), webVersion = "", $link = document.querySelector('link[data-chunk="client"][href*="/client."]');
   if ($link) {
    let match = /\/client\.([^\.]+)\.js/.exec($link.href);
@@ -4539,38 +4541,38 @@ class PatcherCache {
   } else webVersion = document.querySelector("meta[name=gamepass-app-version]")?.content ?? "";
   return hashCode(scriptVersion + webVersion + patches);
  }
- static clear() {
-  window.localStorage.removeItem(PatcherCache.KEY_CACHE), PatcherCache.CACHE = {};
+ clear() {
+  window.localStorage.removeItem(this.KEY_CACHE), this.CACHE = {};
  }
- static checkSignature() {
-  let storedSig = window.localStorage.getItem(PatcherCache.KEY_SIGNATURE) || 0, currentSig = PatcherCache.getSignature();
-  if (currentSig !== parseInt(storedSig)) BxLogger.warning(LOG_TAG2, "Signature changed"), window.localStorage.setItem(PatcherCache.KEY_SIGNATURE, currentSig.toString()), PatcherCache.clear();
+ checkSignature() {
+  let storedSig = window.localStorage.getItem(this.KEY_SIGNATURE) || 0, currentSig = this.getSignature();
+  if (currentSig !== parseInt(storedSig)) BxLogger.warning(LOG_TAG2, "Signature changed"), window.localStorage.setItem(this.KEY_SIGNATURE, currentSig.toString()), this.clear();
   else BxLogger.info(LOG_TAG2, "Signature unchanged");
  }
- static cleanupPatches(patches) {
+ cleanupPatches(patches) {
   return patches.filter((item2) => {
-   for (let id2 in PatcherCache.CACHE)
-    if (PatcherCache.CACHE[id2].includes(item2)) return !1;
+   for (let id2 in this.CACHE)
+    if (this.CACHE[id2].includes(item2)) return !1;
    return !0;
   });
  }
- static getPatches(id2) {
-  return PatcherCache.CACHE[id2];
+ getPatches(id2) {
+  return this.CACHE[id2];
  }
- static saveToCache(subCache) {
+ saveToCache(subCache) {
   for (let id2 in subCache) {
-   let patchNames = subCache[id2], data = PatcherCache.CACHE[id2];
-   if (!data) PatcherCache.CACHE[id2] = patchNames;
+   let patchNames = subCache[id2], data = this.CACHE[id2];
+   if (!data) this.CACHE[id2] = patchNames;
    else for (let patchName of patchNames)
      if (!data.includes(patchName)) data.push(patchName);
   }
-  window.localStorage.setItem(PatcherCache.KEY_CACHE, JSON.stringify(PatcherCache.CACHE));
+  window.localStorage.setItem(this.KEY_CACHE, JSON.stringify(this.CACHE));
  }
- static init() {
-  if (PatcherCache.isInitialized) return;
-  if (PatcherCache.isInitialized = !0, PatcherCache.checkSignature(), PatcherCache.CACHE = JSON.parse(window.localStorage.getItem(PatcherCache.KEY_CACHE) || "{}"), BxLogger.info(LOG_TAG2, PatcherCache.CACHE), window.location.pathname.includes("/play/")) PATCH_ORDERS.push(...PLAYING_PATCH_ORDERS);
+ init() {
+  if (this.isInitialized) return;
+  if (this.isInitialized = !0, this.checkSignature(), this.CACHE = JSON.parse(window.localStorage.getItem(this.KEY_CACHE) || "{}"), BxLogger.info(LOG_TAG2, this.CACHE), window.location.pathname.includes("/play/")) PATCH_ORDERS.push(...PLAYING_PATCH_ORDERS);
   else PATCH_ORDERS.push(ENDING_CHUNKS_PATCH_NAME);
-  PATCH_ORDERS = PatcherCache.cleanupPatches(PATCH_ORDERS), PLAYING_PATCH_ORDERS = PatcherCache.cleanupPatches(PLAYING_PATCH_ORDERS), BxLogger.info(LOG_TAG2, PATCH_ORDERS.slice(0)), BxLogger.info(LOG_TAG2, PLAYING_PATCH_ORDERS.slice(0));
+  PATCH_ORDERS = this.cleanupPatches(PATCH_ORDERS), PLAYING_PATCH_ORDERS = this.cleanupPatches(PLAYING_PATCH_ORDERS), BxLogger.info(LOG_TAG2, PATCH_ORDERS.slice(0)), BxLogger.info(LOG_TAG2, PLAYING_PATCH_ORDERS.slice(0));
  }
 }
 class FullscreenText {
@@ -5254,7 +5256,7 @@ class SettingsNavigationDialog extends NavigationDialog {
   return $svg.dataset.group = settingTab.group, $svg.tabIndex = 0, settingTab.lazyContent && ($svg.dataset.lazy = settingTab.lazyContent.toString()), $svg.addEventListener("click", this.onTabClicked.bind(this)), $svg;
  }
  onGlobalSettingChanged(e) {
-  PatcherCache.clear(), this.$btnReload.classList.add("bx-danger"), this.$noteGlobalReload.classList.add("bx-gone"), this.$btnGlobalReload.classList.remove("bx-gone"), this.$btnGlobalReload.classList.add("bx-danger");
+  PatcherCache.getInstance().clear(), this.$btnReload.classList.add("bx-danger"), this.$noteGlobalReload.classList.add("bx-gone"), this.$btnGlobalReload.classList.remove("bx-gone"), this.$btnGlobalReload.classList.add("bx-danger");
  }
  renderServerSetting(setting) {
   let selectedValue = getPref("server_region"), continents = {

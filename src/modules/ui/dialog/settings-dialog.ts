@@ -1034,7 +1034,7 @@ export class SettingsNavigationDialog extends NavigationDialog {
 
     private onGlobalSettingChanged(e: Event) {
         // Clear PatcherCache;
-        isFullVersion() && PatcherCache.clear();
+        isFullVersion() && PatcherCache.getInstance().clear();
 
         this.$btnReload.classList.add('bx-danger');
 
