@@ -63,6 +63,18 @@ export const BxExposed = {
             BxLogger.error(LOG_TAG, e);
         }
 
+        // Redirect to /en-US/play if visiting from an unsupported region
+        try {
+            const xCloud = state.xcloud.authentication.authStatusByStrategy.XCloud;
+            if (xCloud.type === 3 && xCloud.error.type === 'UnsupportedMarketError') {
+                // Redirect to /en-US/play
+                window.stop();
+                window.location.href = 'https://www.xbox.com/en-US/play';
+            }
+        } catch (e) {
+            BxLogger.error(LOG_TAG, e);
+        }
+
         return state;
     }),
 

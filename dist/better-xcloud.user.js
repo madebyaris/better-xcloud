@@ -5803,6 +5803,12 @@ var BxExposed = {
   } catch (e) {
    BxLogger.error(LOG_TAG3, e);
   }
+  try {
+   let xCloud = state.xcloud.authentication.authStatusByStrategy.XCloud;
+   if (xCloud.type === 3 && xCloud.error.type === "UnsupportedMarketError") window.stop(), window.location.href = "https://www.xbox.com/en-US/play";
+  } catch (e) {
+   BxLogger.error(LOG_TAG3, e);
+  }
   return state;
  },
  modifyTitleInfo: function(titleInfo) {
