@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better xCloud (Lite)
 // @namespace    https://github.com/redphx
-// @version      5.9.4
+// @version      5.9.5-beta
 // @description  Improve Xbox Cloud Gaming (xCloud) experience
 // @author       redphx
 // @license      MIT
@@ -105,7 +105,7 @@ class UserAgent {
   });
  }
 }
-var SCRIPT_VERSION = "5.9.4", SCRIPT_VARIANT = "lite", AppInterface = window.AppInterface;
+var SCRIPT_VERSION = "5.9.5-beta", SCRIPT_VARIANT = "lite", AppInterface = window.AppInterface;
 UserAgent.init();
 var userAgent = window.navigator.userAgent.toLowerCase(), isTv = userAgent.includes("smart-tv") || userAgent.includes("smarttv") || /\baft.*\b/.test(userAgent), isVr = window.navigator.userAgent.includes("VR") && window.navigator.userAgent.includes("OculusBrowser"), browserHasTouchSupport = "ontouchstart" in window || navigator.maxTouchPoints > 0, userAgentHasTouchSupport = !isTv && !isVr && browserHasTouchSupport, supportMkb = AppInterface || !userAgent.match(/(android|iphone|ipad)/), STATES = {
  supportedRegion: !0,
@@ -4895,6 +4895,8 @@ class GuideMenu {
  }
  observe($addedElm) {
   let className = $addedElm.className;
+  if (!className) className = $addedElm.firstElementChild?.className ?? "";
+  if (!className || className.startsWith("bx-")) return;
   if (!className.startsWith("NavigationAnimation") && !className.startsWith("DialogRoutes") && !className.startsWith("Dialog-module__container")) return;
   let $selectedTab = $addedElm.querySelector("div[class^=NavigationMenu] button[aria-selected=true");
   if ($selectedTab) {
@@ -5956,7 +5958,7 @@ class RootDialogObserver {
     if (mutation.type !== "childList") continue;
     if (BX_FLAGS.Debug && BxLogger.warning("RootDialog", "added", mutation.addedNodes), mutation.addedNodes.length === 1) {
      let $addedElm = mutation.addedNodes[0];
-     if ($addedElm instanceof HTMLElement && $addedElm.className) RootDialogObserver.handleAddedElement($root, $addedElm);
+     if ($addedElm instanceof HTMLElement) RootDialogObserver.handleAddedElement($root, $addedElm);
     }
     let shown = !!($root.firstElementChild && $root.firstElementChild.childElementCount > 0);
     if (shown !== beingShown) beingShown = shown, BxEvent.dispatch(window, shown ? BxEvent.XCLOUD_DIALOG_SHOWN : BxEvent.XCLOUD_DIALOG_DISMISSED);

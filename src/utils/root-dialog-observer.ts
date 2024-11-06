@@ -79,7 +79,7 @@ export class RootDialogObserver {
                 BX_FLAGS.Debug && BxLogger.warning('RootDialog', 'added', mutation.addedNodes);
                 if (mutation.addedNodes.length === 1) {
                     const $addedElm = mutation.addedNodes[0];
-                    if ($addedElm instanceof HTMLElement && $addedElm.className) {
+                    if ($addedElm instanceof HTMLElement) {
                         RootDialogObserver.handleAddedElement($root, $addedElm);
                     }
                 }

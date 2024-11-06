@@ -178,7 +178,16 @@ export class GuideMenu {
     }
 
     observe($addedElm: HTMLElement) {
-        const className = $addedElm.className;
+        let className = $addedElm.className;
+
+        // Fix custom buttons disappearing in Guide Menu (#551)
+        if (!className) {
+            className = $addedElm.firstElementChild?.className ?? '';
+        }
+
+        if (!className || className.startsWith('bx-')) {
+            return;
+        }
 
         // TrueAchievements
         if (isFullVersion() && className.includes('AchievementsButton-module__progressBarContainer')) {
