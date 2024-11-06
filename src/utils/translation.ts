@@ -272,6 +272,7 @@ const Texts = {
     "separate-touch-controller": "Separate Touch controller & Controller #1",
     "separate-touch-controller-note": "Touch controller is Player 1, Controller #1 is Player 2",
     "server": "Server",
+    "server-locations": "Server locations",
     "settings": "Settings",
     "settings-reload": "Reload page to reflect changes",
     "settings-reload-note": "Settings in this tab only go into effect on the next page load",

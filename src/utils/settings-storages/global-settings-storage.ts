@@ -117,6 +117,7 @@ export class GlobalSettingsStorage extends BaseSettingsStorage {
         },
         [PrefKey.SERVER_REGION]: {
             label: t('region'),
+            note: CE('a', {target: '_blank', href: 'https://umap.openstreetmap.fr/en/map/xbox-cloud-gaming-servers_1135022'}, t('server-locations')),
             default: 'default',
         },
         [PrefKey.SERVER_BYPASS_RESTRICTION]: {
