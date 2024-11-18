@@ -942,20 +942,20 @@ if (this.baseStorageKey in window.BX_EXPOSED.overrideSettings) {
     // Set Achievements list's filter default to "Locked"
     guideAchievementsDefaultLocked(str: string) {
         let index = str.indexOf('FilterButton-module__container');
-        index >= 0 && (index = PatcherUtils.lastIndexOf(str, '.All', index, 150));
+        index >= 0 && (index = PatcherUtils.lastIndexOf(str, '"All"', index, 150));
         if (index < 0) {
             return false;
         }
 
-        str = PatcherUtils.replaceWith(str, index, '.All', '.Locked');
+        str = PatcherUtils.replaceWith(str, index, '"All"', '"Locked"');
 
         index = str.indexOf('"Guide_Achievements_Unlocked_Empty","Guide_Achievements_Locked_Empty"');
-        index >= 0 && (index = PatcherUtils.indexOf(str, '.All', index, 250));
+        index >= 0 && (index = PatcherUtils.indexOf(str, '"All"', index, 250));
         if (index < 0) {
             return false;
         }
 
-        str = PatcherUtils.replaceWith(str, index, '.All', '.Locked');
+        str = PatcherUtils.replaceWith(str, index, '"All"', '"Locked"');
         return str;
     },
 
