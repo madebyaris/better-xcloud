@@ -1034,6 +1034,9 @@ let PATCH_ORDERS: PatchArray = [
 
     getPref(PrefKey.UI_HIDE_SECTIONS).includes(UiSection.FRIENDS) && 'ignorePlayWithFriendsSection',
     getPref(PrefKey.UI_HIDE_SECTIONS).includes(UiSection.ALL_GAMES) && 'ignoreAllGamesSection',
+
+    getPref(PrefKey.UI_HIDE_SECTIONS).includes(UiSection.STREAM_YOUR_OWN_GAME) && 'ignoreStreamYourOwnGameSection',
+
     getPref(PrefKey.UI_HIDE_SECTIONS).includes(UiSection.TOUCH) && 'ignorePlayWithTouchSection',
     (getPref(PrefKey.UI_HIDE_SECTIONS).includes(UiSection.NATIVE_MKB) || getPref(PrefKey.UI_HIDE_SECTIONS).includes(UiSection.MOST_POPULAR)) && 'ignoreSiglSections',
 

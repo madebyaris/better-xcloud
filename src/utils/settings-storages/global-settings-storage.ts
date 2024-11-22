@@ -567,6 +567,7 @@ export class GlobalSettingsStorage extends BaseSettingsStorage {
                 [UiSection.TOUCH]: t('section-touch'),
                 [UiSection.MOST_POPULAR]: t('section-most-popular'),
                 [UiSection.ALL_GAMES]: t('section-all-games'),
+                [UiSection.STREAM_YOUR_OWN_GAME]: t('section-stream-your-own-game'),
             },
             params: {
                 size: 6,

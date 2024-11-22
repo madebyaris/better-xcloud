@@ -5,4 +5,5 @@ export enum UiSection {
     NATIVE_MKB = 'native-mkb',
     NEWS = 'news',
     TOUCH = 'touch',
+    STREAM_YOUR_OWN_GAME = 'stream-your-own-game',
 }

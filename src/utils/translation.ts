@@ -264,6 +264,7 @@ const Texts = {
     "screen": "Screen",
     "screenshot-apply-filters": "Apply video filters to screenshots",
     "section-all-games": "All games",
+    "section-stream-your-own-game": "Stream your own game",
     "section-most-popular": "Most popular",
     "section-native-mkb": "Play with mouse & keyboard",
     "section-news": "News",

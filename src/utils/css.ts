@@ -23,6 +23,11 @@ export function addCss() {
         selectorToHide.push('#BodyContent div[class*=AllGamesRow-module__rowHeader]');
     }
 
+    // Hide "Stream your own game" section
+    if (PREF_HIDE_SECTIONS.includes(UiSection.STREAM_YOUR_OWN_GAME)) {
+        selectorToHide.push('#BodyContent > div.ByogRow-module__container___FkN8X.HomePage-module__bottomSpacing___ORSxh');
+    }
+
     // Hide "Most popular" section
     if (PREF_HIDE_SECTIONS.includes(UiSection.MOST_POPULAR)) {
         selectorToHide.push('#BodyContent div[class*=HomePage-module__bottomSpacing]:has(a[href="/play/gallery/popular"])');
